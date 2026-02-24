@@ -67,3 +67,27 @@ FROM infectious_cases;
 ![](./img/P4_1.png)
 
 -- 5-----------------------
+
+DROP FUNCTION IF EXISTS Calculate_years_since;
+
+DELIMITER //
+
+CREATE FUNCTION Calculate_years_since (year_val INT)
+RETURNS INT
+DETERMINISTIC
+NO SQL
+BEGIN
+RETURN TIMESTAMPDIFF(YEAR, MAKEDATE(year_val, 1), CURRENT_DATE());
+END //
+
+DELIMITER ;
+
+![](./img/P5_function.png)
+
+select
+MAKEDATE(Year, 1) AS full_date,
+CURRENT_DATE() AS cur_date,
+Calculate_years_since(Year) as years_difference
+FROM infectious_cases;
+
+![](./img/P5_res.png)
