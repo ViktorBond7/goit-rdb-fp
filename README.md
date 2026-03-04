@@ -6,40 +6,55 @@ use pandemic;
 
 -- 2-----------------------
 
-CREATE TABLE countries (
-country_code varchar(10) primary key not null,
-country_name text not null
+CREATE TABLE entities (
+id INT AUTO_INCREMENT PRIMARY KEY,
+country_name VARCHAR(255) NOT NULL,
+country_code VARCHAR(10) UNIQUE
 );
 
-insert into countries (country_code, country_name)
+insert into countries (country_name, country_code)
 select distinct Code, Entity
 from infectious_cases;
 
 select \* from infectious_cases;
 ![](./img/P2_cound_rows.png)
 
-alter table infectious_cases
-modify Code varchar(10);
+CREATE TABLE infectious_cases_normalized (
+id INT AUTO_INCREMENT PRIMARY KEY,
+country_id INT,
+year INT,
+number_yaws DOUBLE,
+polio_cases INT,
+cases_guinea_worm INT,
+--
+--
+FOREIGN KEY (country_id) REFERENCES country(id)
+);
 
-alter table infectious_cases
-ADD CONSTRAINT fk_country
-FOREIGN KEY (country_code) REFERENCES countries(country_code);
+INSERT INTO infectious_cases_normalized (country_id, year, number_yaws, polio_cases, cases_guinea_worm)
+SELECT
+c.id,
+ic.Year,
+ic.Number_yaws,
+ic.polio_cases,
+ic.cases_guinea_worm
+--
+--
+FROM infectious_cases ic
+JOIN countries c ON ic.Entity = c.country_name AND ic.Code = c.country_code;
+
+UPDATE infectious_cases SET Code = NULL WHERE Code = '';
+
+DROP TABLE infectious_cases;
+
+RENAME TABLE infectious_cases_normalized TO infectious_cases;
 
 ![](./img/P2_EER_Diagram.png)
-
-ALTER TABLE infectious_cases
-CHANGE Code country_code VARCHAR(10);
-
-alter table infectious_cases
-drop Entity;
-
-alter table infectious_cases
-add column id int primary key auto_increment;
 
 -- 3-----------------------
 
 SELECT
-c.country_code,
+c.id,
 c.country_name,
 avg(ic.Number_rabies) as avg_number_rabies,
 min(ic.Number_rabies) as min_number_rabies,
@@ -47,10 +62,10 @@ max(ic.Number_rabies) as max_number_rabies,
 sum(ic.Number_rabies) as sum_number_rabies
 FROM countries c
 JOIN infectious_cases ic
-ON c.country_code = ic.country_code
+ON c.id = ic.country_id
 where ic.Number_rabies is not null
 and trim(coalesce(ic.Number_rabies, '')) <>''
-group by c.country_code, c.country_code
+group by c.country_code, c.id
 order by avg_number_rabies DESC
 limit 10;
 
